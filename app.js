@@ -2,45 +2,38 @@
 
 $(function () {
     var model = {
-        day_of_w: [],
-
+        summary: [],
         init: function () {
-            model.min_max();
+            model.getWeekForecast();
         },
 
         /*CALCOLO LA TEMPERATURA MIN E MAX PER OGNI GIORNO*/
 
-        min_max: function () {
+        getWeekForecast: function () {
 
-            var count = 0;
-            model.add(0);
-
-            for (var j = 0; j < data.length - 1; j++) {
-                if (model.day_of_w[count].day != data[j + 1].day) {
-                    model.add(j + 1);
-                    count++;
-                } else {
-                    if (data[j].temperature > model.day_of_w[count].max_tmp) {
-                        model.day_of_w[count].max_tmp = data[j].temperature;
-                    } else if (data[j].temperature > model.day_of_w[count].min_tmp) {
-                        model.day_of_w[count].min_tmp = data[j].temperature;
+            for (var i = 0; i < data.length; i++) {
+                // do we have summary for the current day? 
+                if (model.summary[data[i].day] == undefined) {
+                    model.summary[data[i].day] = {
+                        min: data[i],
+                        max: data[i]
+                    };
+                } else { // We already have a summary for the current day, so let's see if the measure should replace the min / max
+                    var current = data[i];
+                    // is the current measure lower than the minimun temperature for the day?
+                    if (current.temperature < model.summary[current.day].min.temperature) {
+                        model.summary[current.day].min = current;
+                    } else if (current.temperature > model.summary[current.day].max.temperature) {
+                        model.summary[current.day].max = current;
                     }
+
                 }
-
             }
-        },
-
-        add: function (i) {
-            model.day_of_w.push({
-                day: data[i].day,
-                max_tmp: data[i].temperature,
-                min_tmp: data[i].temperature,
-                condition: data[i].condition
-            });
+            console.log(model.summary);
         },
 
         getAllDays: function () {
-            return model.day_of_w;
+            return model.summary;
         }
 
     };
@@ -51,7 +44,7 @@ $(function () {
 
         init: function () {
             model.init();
-            dayListView.init();;
+            dayListView.init();
         },
 
         getAllDays: function () {
@@ -70,18 +63,21 @@ $(function () {
         render: function () {
             var htmlStr = '';
             var allDays = octopus.getAllDays();
-            for(var i=0; i<allDays.length;i++){
-                htmlStr +=  '<li>'+
-                            '<div class="icon">' +
-                            '<img src="img/icons/'+allDays[i].condition+'.png">' +
-                            '</div>' +
-                            '<div class="stats">' +
-                            '<h2>'+allDays[i].day+'</h2>' +
-                            '<strong>min</strong> '+allDays[i].min_tmp+'ºC' +
-                            '<strong>max</strong> '+allDays[i].max_tmp+'ºC' +
-                            '</div>'+
-                            '</li>';
+
+            for (var item in allDays) {
+                htmlStr += '<li>' +
+                    '<div class="icon">' +
+                    '<img src="img/icons/' + allDays[item].max.condition + '.png">' +
+                    '</div>' +
+                    '<div class="stats">' +
+                    '<h2>' + allDays[item].max.day + '</h2>' +
+                    '<strong>min</strong> ' + allDays[item].min.temperature + 'ºC' +
+                    '<strong>max</strong> ' + allDays[item].max.temperature + 'ºC' +
+                    '</div>' +
+                    '</li>';
             }
+
+            //console.log(htmlStr);
             this.dayList.append(htmlStr);
         }
 
